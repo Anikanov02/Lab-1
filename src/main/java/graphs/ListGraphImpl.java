@@ -1,15 +1,15 @@
 package graphs;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ListGraphImpl<T> implements Graph<T>{
 
-	private Map<Integer,List<Integer>> adjList = null;
+	private Map<Integer,Set<Integer>> adjList = null;
 	private Map<Integer,T> elements = null;
 	
 	public ListGraphImpl() {
@@ -20,7 +20,7 @@ public class ListGraphImpl<T> implements Graph<T>{
 	@Override
 	public void setVertex(int id, T element, Integer[] adjacentVertexes ) {
 		elements.put(id, element);
-		adjList.put(id, new ArrayList<>());
+		adjList.put(id, new HashSet<>());
 		setEdges(id, adjacentVertexes);
 	}
 	
@@ -30,11 +30,9 @@ public class ListGraphImpl<T> implements Graph<T>{
 		deleteVertexFromTable(adjList, id);
 	}
 	
-	private void deleteVertexFromTable(Map<Integer,List<Integer>> table,int id) {
+	private void deleteVertexFromTable(Map<Integer,Set<Integer>> table,int id) {
 		table.remove(id);
-		table.values().stream().forEach((n)->{
-			n.removeIf((k)->k.equals(id));
-		});
+		table.values().stream().forEach((n)->n.remove(id));
 	}
 	
 	@Override
@@ -54,7 +52,7 @@ public class ListGraphImpl<T> implements Graph<T>{
 	@Override
 	public void deleteEdges(int id, Integer[] adjacentVertexes) {
 		if(adjList.containsKey(id)) {
-			List<Integer> l = adjList.get(id);
+			Set<Integer> l = adjList.get(id);
 			Arrays.stream(adjacentVertexes).forEach((n)->{
 				l.remove(n);
 			});
@@ -66,37 +64,41 @@ public class ListGraphImpl<T> implements Graph<T>{
 	
 	@Override
 	public boolean isConnected() {
-		return adjList.size()!=0?isConnected(new ArrayList<>(),adjList.keySet().toArray(Integer[]::new)[0]):true;
+		return adjList.size()!=0?isConnected(new HashSet<>(),adjList.keySet().toArray(Integer[]::new)[0]):true;
 	}
 	
-	private boolean isConnected(List<Integer> checkedNodes, int nodeId) {
+	private boolean isConnected(Set<Integer> checkedNodes, int nodeId) {
 		checkedNodes.add(nodeId);
-		adjList.get(nodeId).stream().distinct().filter((n)->!checkedNodes.contains(n)).forEach((k)->{
+		for(Integer k:adjList.get(nodeId).stream().filter((n)->!checkedNodes.contains(n)).collect(Collectors.toList())) {
 			if(isConnected(checkedNodes,k)) {
-				return;
+				break;
 			}
-		});
+		}
 		return checkedNodes.size()==adjList.size();
 	}
 
 	@Override
 	public int getDistance(int src, int dst) {
-		return getDistance(new HashMap<>(adjList), new HashMap<>(),new ArrayList<>(Arrays.stream(new Integer[] {src}).collect(Collectors.toList())),dst);
+		Map<Integer,Integer> weights = new HashMap<>();
+		weights.put(src, 0);
+		adjList.keySet().stream().filter((n)->!n.equals(src)).forEach((n)->{
+			weights.put(n, Integer.MAX_VALUE);
+		});
+		return getDistance(new HashMap<>(adjList), weights ,new HashSet<>(Arrays.stream(new Integer[] {src}).collect(Collectors.toList())),dst);
 	}
 	
-	private int getDistance(Map<Integer,List<Integer>> temp, Map<Integer,Integer> weights, List<Integer> src, int dst) {
+	private int getDistance(Map<Integer,Set<Integer>> temp, Map<Integer,Integer> weights, Set<Integer> src, int dst) {
 		src.stream().forEach((n)->{
 			temp.get(n).stream().forEach((k)->{
-				if(weights.get(src.get(n))+1>weights.get(k)) {
-					weights.put(k, weights.get(src.get(n))+1);
+				if(weights.get(n)+1<weights.get(k)) {
+					weights.put(k, weights.get(n)+1);
 				}
 			});
-			deleteVertexFromTable(temp, src.get(n));
-			weights.remove(src.get(n));
+			deleteVertexFromTable(temp, n);
 		});	
 		src.stream().forEach((n)->{
 			src.addAll(temp.get(n));
-			src.removeIf((k)->k==n);
+			src.remove(n);
 		});
 		getDistance(temp,weights,src,dst);
 		return weights.get(dst);
