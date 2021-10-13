@@ -94,4 +94,20 @@ public class MatrixGraphImpl<T> implements Graph<T>{
 		return res;
 	}
 
+	@Override
+	public boolean isEulerian() {
+		for(Map<Integer,Boolean> adjLine : adjMatr.values()) {
+			int counter = 0;
+			for(Boolean b:adjLine.values()) {
+				if(b) {
+					counter++;
+				}
+			}
+			if(counter%2==0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 }

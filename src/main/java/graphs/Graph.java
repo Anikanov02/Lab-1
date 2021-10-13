@@ -14,4 +14,6 @@ public interface Graph<T>{
 	
 	public int getDistance(int src, int dst);
 	
+	public boolean isEulerian();
+	
 }

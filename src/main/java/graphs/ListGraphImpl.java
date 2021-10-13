@@ -104,4 +104,14 @@ public class ListGraphImpl<T> implements Graph<T>{
 		return weights.get(dst);
 	}
 
+	@Override
+	public boolean isEulerian() {
+		for(Set<Integer> adjLine:adjList.values()) {
+			if(adjLine.size()%2==0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 }
